@@ -8,7 +8,7 @@ RUN apk update  && \
 # Configure bash as the default shell
 RUN chsh -s /bin/bash
 
-# Get Kotlin Native from local zip with new nucleo_f4112zg platform target for zephyr
+# Get Kotlin Native from local zip with new zephyr_nucleo_f412zg platform target for zephyr
 # Change back to loc 18 again once the target is merged into a future K/N release
 COPY ./kotlin-native-linux-0.6.1-mod.zip ./kotlin-native-linux-0.6.1-mod.zip
 RUN unzip kotlin-native-*.zip && \
