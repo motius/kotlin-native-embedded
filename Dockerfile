@@ -1,26 +1,39 @@
-FROM openjdk:8-jdk-alpine
+FROM fedora:latest
 
-# install packages for alpine
-RUN apk update  && \
-    apk upgrade && \
-    apk add --no-cache bash gcc make cmake git wget tar python3 xz shadow unzip
+RUN dnf group install "Development Tools" "C Development Tools and Libraries" -y
+RUN dnf install gradle \
+                cmake \
+                ncurses-compat-libs \
+                ninja-build \
+                gperf \
+                dfu-util \
+                dtc \
+                python3-ply \
+                python3-yaml \
+                python3-pykwalify \
+                glibc-devel.i686 \
+                libstdc++-devel.i686 \
+                wget \
+                xz \
+            -y
 
-# Configure bash as the default shell
-RUN chsh -s /bin/bash
+WORKDIR root
 
-# Get Kotlin Native from local zip with new zephyr_nucleo_f412zg platform target for zephyr
-# Change back to loc 18 again once the target is merged into a future K/N release
-COPY ./kotlin-native-linux-0.6.1-mod.zip ./kotlin-native-linux-0.6.1-mod.zip
-RUN unzip kotlin-native-*.zip && \
-    rm kotlin-native-*.zip
+# Get Kotlin Native from local zip with new nucleo_f4112zg platform target for zephyr
+# Should be changed to the lower implementation again once the target is merged into a future Kotlin/Native release
+COPY ./dist.zip ./dist.zip
+RUN unzip dist.zip && \
+    rm -rf dist.zip
+ENV PATH /root/dist/bin:$PATH
+
+# Run this to fetch dependencies "This is a one-time action performed only on the first run of the compiler."
+COPY ./start.kt ./start.kt
+RUN konanc start.kt -target zephyr_stm32f4_disco
 
 # Get Kotlin Native
 #RUN wget https://github.com/JetBrains/kotlin-native/releases/download/v0.6.1/kotlin-native-linux-0.6.1.tar.gz && \
 #    tar -xvzf kotlin-native-*.tar.gz && \
 #    rm kotlin-native-*.tar.gz
-
-# Set path for Kotlin Native, remove -mod with future K/N release
-ENV PATH $PATH:/kotlin-native-linux-0.6.1-mod/bin
 
 # Configure Zephyr SDK
 RUN mkdir zephyr-sdk && cd zephyr-sdk && \
@@ -31,3 +44,6 @@ RUN mkdir zephyr-sdk && cd zephyr-sdk && \
 
 # Configure Zephyr
 RUN git clone https://github.com/zephyrproject-rtos/zephyr.git
+WORKDIR zephyr
+RUN pip3 install --user -r scripts/requirements.txt
+WORKDIR root
